@@ -7,36 +7,36 @@
 import java.io.*;
 import java.net.*;
 
-public class DNSHandler extends Handler {
+public class DNSHandler {
     public static final int BUFFER_SIZE = 256;
 
     public void process(Socket client) throws IOException {
         byte[] buffer = new byte[BUFFER_SIZE];
-        InputStream fromClient = null;
-        OutputStream toClient = null;
+        BufferedReader fromClient = null;
+        PrintWriter toClient = null;
 
         try {
-            fromClient = new BufferedInputStream(client.getInputStream());
-            toClient = new BufferedOutputStream(client.getOutputStream());
+            fromClient = new BufferedReader (new InputStreamReader(client.getInputStream()));
+            toClient = new PrintWriter(client.getOutputStream());
 
-            int numBytes;
+            String bufString;
+            InetAddress hostAddress;
 
-            while ((numBytes = fromClient.read(buffer)) != -1) {
-                InetAddress hostAddress;
+            bufString = fromClient.readLine();
+            System.out.printf("Client request read: %s\n", bufString);
 
-                String bufString = new String(buffer);
-
-                try {
-                    hostAddress = InetAddress.getByName(bufString);
-                    toClient.write(hostAddress.getHostAddress().getBytes(), 0, hostAddress.getHostAddress().length());
-                    toClient.flush();
-                }
-                catch (UnknownHostException uhe) {
-                    String message = "Unknown Host: " + bufString;
-                    toClient.write(message.getBytes(), 0, message.length());
-                    toClient.flush();
-                }
-            }
+             try {
+                hostAddress = InetAddress.getByName(bufString);
+                System.out.printf("Host address is %s\n", hostAddress.getHostAddress());
+                String address = hostAddress.getHostAddress();
+                toClient.println(address);
+                toClient.flush();
+             }
+             catch (UnknownHostException uhe) {
+                String message = "Unknown Host: " + bufString;
+                toClient.println(message);
+                toClient.flush();
+             }
         }
         catch (IOException ioe) {
             System.err.println(ioe);
